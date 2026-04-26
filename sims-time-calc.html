@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sims Time Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --card: #161920;
+      --border: #252830;
+      --accent: #5cffb1;
+      --accent2: #5ca8ff;
+      --warn: #ff6b6b;
+      --amber: #fbbf24;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(92,255,177,0.07), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(92,168,255,0.06), transparent);
+    }
+
+    .container { width: 100%; max-width: 500px; }
+
+    .header { text-align: center; margin-bottom: 28px; }
+    h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2; }
+    h1 span { color: var(--accent); }
+    .subtitle { margin-top: 8px; color: var(--muted); font-size: 14px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px;
+      margin-bottom: 14px;
+    }
+
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    /* --- Day Type Dropdown --- */
+    .day-select-wrap { position: relative; }
+    .day-select-wrap select {
+      width: 100%;
+      appearance: none;
+      -webkit-appearance: none;
+      background: #0d0f14;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 13px 44px 13px 16px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .day-select-wrap select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(92,255,177,0.08);
+    }
+    .day-select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .day-target-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 6px 14px;
+      background: rgba(92,255,177,0.07);
+      border: 1px solid rgba(92,255,177,0.15);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--accent);
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* --- Entry / Exit Time --- */
+    .time-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .time-field { display: flex; flex-direction: column; gap: 7px; }
+    .time-field label { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+    .time-input-box {
+      display: flex;
+      align-items: center;
+      background: #0d0f14;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      gap: 4px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .time-input-box:focus-within {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(92,168,255,0.08);
+    }
+    .time-input-box input[type="time"] {
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 17px;
+      font-weight: 700;
+      width: 100%;
+      cursor: pointer;
+    }
+    /* style the time picker chrome */
+    input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.5) sepia(1) saturate(3) hue-rotate(100deg);
+      cursor: pointer;
+      opacity: 0.6;
+    }
+
+    .office-info {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(251,191,36,0.06);
+      border: 1px solid rgba(251,191,36,0.15);
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    .office-info .oi-label { color: var(--muted); }
+    .office-info .oi-val {
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      color: var(--amber);
+    }
+
+    /* --- Break Allowance Banner --- */
+    .break-banner {
+      background: linear-gradient(135deg, rgba(251,191,36,0.08) 0%, rgba(251,191,36,0.03) 100%);
+      border: 1px solid rgba(251,191,36,0.2);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .break-icon { font-size: 28px; flex-shrink: 0; }
+    .break-text .bt-title {
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 4px;
+    }
+    .break-text .bt-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .break-text .bt-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* --- Tracked Input --- */
+    .tracked-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #0d0f14;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      transition: border-color 0.2s;
+    }
+    .tracked-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(92,255,177,0.07);
+    }
+    .tracked-wrap input {
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 38px;
+      font-weight: 700;
+      width: 58px;
+      text-align: center;
+    }
+    .tracked-wrap .sep {
+      font-family: 'Space Mono', monospace;
+      font-size: 38px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .tracked-wrap .unit-label {
+      display: flex; flex-direction: column; gap: 2px; margin-left: -4px;
+    }
+    .tracked-wrap .unit-label span {
+      font-size: 11px; color: var(--muted);
+      font-family: 'Space Mono', monospace; letter-spacing: 0.05em;
+    }
+    .hint { text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+    /* --- Result Card --- */
+    .result-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .result-card.done { border-color: rgba(92,255,177,0.4); background: linear-gradient(135deg, #161920 0%, #0f1d17 100%); }
+    .result-card.remaining { border-color: rgba(92,168,255,0.3); }
+    .result-card.over { border-color: rgba(255,107,107,0.3); }
+
+    .result-glow {
+      position: absolute; top: -40px; right: -40px;
+      width: 160px; height: 160px; border-radius: 50%;
+      pointer-events: none; opacity: 0; transition: opacity 0.4s;
+    }
+    .result-card.done .result-glow { background: radial-gradient(circle, rgba(92,255,177,0.15), transparent 70%); opacity: 1; }
+    .result-card.remaining .result-glow { background: radial-gradient(circle, rgba(92,168,255,0.12), transparent 70%); opacity: 1; }
+    .result-card.over .result-glow { background: radial-gradient(circle, rgba(255,107,107,0.12), transparent 70%); opacity: 1; }
+
+    .result-main { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
+    .result-time {
+      font-family: 'Space Mono', monospace;
+      font-size: 50px; font-weight: 700;
+      letter-spacing: -2px; line-height: 1; transition: color 0.3s;
+    }
+    .result-card.done .result-time { color: var(--accent); }
+    .result-card.remaining .result-time { color: var(--accent2); }
+    .result-card.over .result-time { color: var(--warn); }
+    .result-label { font-size: 13px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 100px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      font-family: 'Space Mono', monospace;
+    }
+    .badge-done { background: rgba(92,255,177,0.12); color: var(--accent); border: 1px solid rgba(92,255,177,0.2); }
+    .badge-remaining { background: rgba(92,168,255,0.1); color: var(--accent2); border: 1px solid rgba(92,168,255,0.2); }
+    .badge-over { background: rgba(255,107,107,0.1); color: var(--warn); border: 1px solid rgba(255,107,107,0.2); }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    .progress-section { margin-top: 14px; }
+    .progress-labels {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--muted);
+      margin-bottom: 8px; font-family: 'Space Mono', monospace;
+    }
+    .progress-track { height: 6px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden; }
+    .progress-fill {
+      height: 100%; border-radius: 999px;
+      transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1), background 0.3s;
+      max-width: 100%;
+    }
+    .fill-remaining { background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+    .fill-done { background: linear-gradient(90deg, var(--accent), #a0ffd6); }
+    .fill-over { background: linear-gradient(90deg, var(--accent), var(--warn)); }
+
+    .breakdown { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .bk-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 11px 13px;
+    }
+    .bk-val { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .bk-lbl { font-size: 11px; color: var(--muted); }
+
+    .info-row {
+      margin-top: 12px;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .info-row .label { font-size: 12px; color: var(--muted); }
+    .info-row .val { font-family: 'Space Mono', monospace; font-size: 15px; font-weight: 700; color: var(--accent); }
+
+    .placeholder-text { text-align: center; color: var(--muted); font-size: 14px; padding: 20px 0; }
+
+    .reset-btn {
+      width: 100%; padding: 13px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px; color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      cursor: pointer; transition: all 0.2s; margin-top: 4px;
+    }
+    .reset-btn:hover { background: rgba(255,255,255,0.07); color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+    footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 8px; opacity: 0.6; }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    @media (max-width: 480px) {
+      .result-time { font-size: 40px; }
+      .tracked-wrap input { font-size: 32px; width: 52px; }
+      .tracked-wrap .sep { font-size: 32px; }
+      .breakdown { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Sims <span>Time Calculator</span></h1>
+    <p class="subtitle">Track your time, know your breaks</p>
+  </div>
+
+  <!-- Day Type -->
+  <div class="card">
+    <div class="section-label">Day Type</div>
+    <div class="day-select-wrap">
+      <select id="dayType" onchange="onAnyChange()">
+        <option value="full">☀️ Full Day</option>
+        <option value="half">🌤 Half Day</option>
+      </select>
+    </div>
+    <div class="day-target-pill">🎯 <span id="pillText">Target: 7h 05m</span></div>
+  </div>
+
+  <!-- Office Hours -->
+  <div class="card">
+    <div class="section-label">Office Hours</div>
+    <div class="time-row">
+      <div class="time-field">
+        <label>🟢 Entry Time</label>
+        <div class="time-input-box">
+          <input type="time" id="entryTime" value="07:00" onchange="onAnyChange()"/>
+        </div>
+      </div>
+      <div class="time-field">
+        <label>🔴 Exit Time</label>
+        <div class="time-input-box">
+          <input type="time" id="exitTime" value="16:00" onchange="onAnyChange()"/>
+        </div>
+      </div>
+    </div>
+    <div class="office-info">
+      <span class="oi-label">⏳ Total time at office</span>
+      <span class="oi-val" id="officeTotal">9h 00m</span>
+    </div>
+  </div>
+
+  <!-- Break Allowance -->
+  <div class="break-banner" id="breakBanner">
+    <div class="break-icon">☕</div>
+    <div class="break-text">
+      <div class="bt-title">Break Allowance</div>
+      <div class="bt-val" id="breakVal">1h 55m</div>
+      <div class="bt-sub" id="breakSub">You can take up to <strong id="breakStrong">1h 55m</strong> of breaks today</div>
+    </div>
+  </div>
+
+  <!-- Tracked Input -->
+  <div class="card">
+    <div class="section-label">Time Tracked Today</div>
+    <div class="tracked-wrap">
+      <input type="number" id="trackedH" min="0" max="23" placeholder="0" oninput="onAnyChange()"/>
+      <span class="sep">:</span>
+      <input type="number" id="trackedM" min="0" max="59" placeholder="00" oninput="onAnyChange()"/>
+      <div class="unit-label">
+        <span>HH</span>
+        <span>MM</span>
+      </div>
+    </div>
+    <p class="hint">Enter the hours and minutes from your time tracker</p>
+  </div>
+
+  <!-- Result Card -->
+  <div class="result-card" id="resultCard">
+    <div class="result-glow"></div>
+    <div class="placeholder-text" id="placeholder">👆 Enter your tracked time above</div>
+    <div id="resultContent" style="display:none">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <div class="section-label" style="margin:0">Result</div>
+        <div class="status-badge" id="statusBadge"><span class="dot"></span><span id="statusText"></span></div>
+      </div>
+      <div class="result-main">
+        <div class="result-time" id="resultTime">--:--</div>
+        <div class="result-label" id="resultLabel"></div>
+      </div>
+      <div class="progress-section">
+        <div class="progress-labels">
+          <span id="progLeft">0h 0m tracked</span>
+          <span id="progRight">target: 0h 0m</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill fill-remaining" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="breakdown" id="breakdownArea"></div>
+      <div class="info-row" id="finishTimeRow" style="display:none;">
+        <span class="label">🏁 Done tracking by</span>
+        <span class="val" id="finishTimeVal"></span>
+      </div>
+      <div class="info-row" id="breakLeftRow" style="display:none;">
+        <span class="label">☕ Break budget left</span>
+        <span class="val" id="breakLeftVal" style="color:var(--amber)"></span>
+      </div>
+    </div>
+  </div>
+
+  <button class="reset-btn" onclick="resetAll()">↺ Reset</button>
+  <footer>Sims Time Calculator &nbsp;·&nbsp; Hosted on GitHub Pages</footer>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  const TARGETS = { full: 7*60+5, half: 4*60 };
+  const PILL_LABELS = { full: 'Target: 7h 05m', half: 'Target: 4h 00m' };
+
+  function toMinsFromTime(str) {
+    // "HH:MM" -> total minutes from midnight
+    const [h, m] = str.split(':').map(Number);
+    return h*60 + m;
+  }
+
+  function toMins(h, m) { return (parseInt(h)||0)*60 + (parseInt(m)||0); }
+
+  function fmtTime(mins) {
+    const h = Math.floor(Math.abs(mins)/60);
+    const m = Math.abs(mins) % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+
+  function fmtLabel(mins) {
+    const h = Math.floor(Math.abs(mins)/60);
+    const m = Math.abs(mins) % 60;
+    const parts = [];
+    if(h) parts.push(`${h}h`);
+    parts.push(`${m}m`);
+    return parts.join(' ');
+  }
+
+  function fmtClockFromMins(totalMins) {
+    // convert minutes-from-midnight to HH:MM clock
+    const h = Math.floor(totalMins / 60) % 24;
+    const m = totalMins % 60;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${String(h12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
+
+  function onAnyChange() {
+    updateOfficeInfo();
+    calculate();
+  }
+
+  function updateOfficeInfo() {
+    const entry = $('entryTime').value;
+    const exit  = $('exitTime').value;
+    if(!entry || !exit) return;
+
+    const entryMins = toMinsFromTime(entry);
+    let   exitMins  = toMinsFromTime(exit);
+    if(exitMins <= entryMins) exitMins += 24*60; // overnight shift
+
+    const officeMins  = exitMins - entryMins;
+    const targetMins  = TARGETS[$('dayType').value];
+    const breakMins   = officeMins - targetMins;
+
+    $('officeTotal').textContent = fmtLabel(officeMins);
+    $('pillText').textContent    = PILL_LABELS[$('dayType').value];
+
+    if(breakMins > 0) {
+      $('breakVal').textContent    = fmtLabel(breakMins);
+      $('breakStrong').textContent = fmtLabel(breakMins);
+      $('breakSub').innerHTML = `You can take up to <strong id="breakStrong">${fmtLabel(breakMins)}</strong> of breaks today`;
+      $('breakBanner').style.display = 'flex';
+    } else {
+      $('breakBanner').style.display = 'none';
+    }
+  }
+
+  function calculate() {
+    const trackedH = $('trackedH').value;
+    const trackedM = $('trackedM').value;
+    if(trackedH === '' && trackedM === '') { showPlaceholder(); return; }
+
+    const entry = $('entryTime').value;
+    const exit  = $('exitTime').value;
+    const entryMins = toMinsFromTime(entry);
+    let   exitMins  = toMinsFromTime(exit);
+    if(exitMins <= entryMins) exitMins += 24*60;
+
+    const officeMins  = exitMins - entryMins;
+    const targetMins  = TARGETS[$('dayType').value];
+    const breakBudget = officeMins - targetMins;
+    const trackedMins = toMins(trackedH, trackedM);
+    const remaining   = targetMins - trackedMins;
+    const pct         = Math.min((trackedMins / targetMins) * 100, 100);
+
+    // break budget left = breakBudget - (office time already elapsed vs tracked)
+    // simpler: break used = officeElapsed - tracked; break left = breakBudget - breakUsed
+    // We'll show break budget remaining relative to tracked vs now
+    const now = new Date();
+    const nowMins = now.getHours()*60 + now.getMinutes();
+    let officeElapsed = nowMins - entryMins;
+    if(officeElapsed < 0) officeElapsed = 0;
+    officeElapsed = Math.min(officeElapsed, officeMins);
+    const breakUsed = Math.max(0, officeElapsed - trackedMins);
+    const breakLeft = Math.max(0, breakBudget - breakUsed);
+
+    $('placeholder').style.display = 'none';
+    $('resultContent').style.display = 'block';
+
+    const card  = $('resultCard');
+    const fill  = $('progressFill');
+    const badge = $('statusBadge');
+
+    $('progLeft').textContent  = `${fmtLabel(trackedMins)} tracked`;
+    $('progRight').textContent = `target: ${fmtLabel(targetMins)}`;
+    fill.style.width = pct + '%';
+
+    if(remaining > 0) {
+      card.className  = 'result-card remaining';
+      fill.className  = 'progress-fill fill-remaining';
+      badge.className = 'status-badge badge-remaining';
+      $('statusText').textContent = 'In Progress';
+      $('resultTime').textContent = fmtTime(remaining);
+      $('resultLabel').innerHTML  = `more to track`;
+
+      // Done tracking by = now + remaining
+      const finishMins = nowMins + remaining;
+      $('finishTimeVal').textContent = fmtClockFromMins(finishMins);
+      $('finishTimeRow').style.display = 'flex';
+
+      // Break left
+      $('breakLeftVal').textContent = breakLeft > 0 ? fmtLabel(breakLeft) : '0m';
+      $('breakLeftRow').style.display = 'flex';
+
+    } else if(remaining === 0) {
+      card.className  = 'result-card done';
+      fill.className  = 'progress-fill fill-done';
+      badge.className = 'status-badge badge-done';
+      $('statusText').textContent = 'Target Hit!';
+      $('resultTime').textContent = '00:00';
+      $('resultLabel').innerHTML  = `Target completed ✓`;
+      $('finishTimeRow').style.display = 'none';
+      $('breakLeftRow').style.display = 'none';
+
+    } else {
+      card.className  = 'result-card over';
+      fill.className  = 'progress-fill fill-over';
+      badge.className = 'status-badge badge-over';
+      $('statusText').textContent = 'Over Target';
+      $('resultTime').textContent = fmtTime(Math.abs(remaining));
+      $('resultLabel').innerHTML  = `over target 🎉`;
+      $('finishTimeRow').style.display = 'none';
+      $('breakLeftRow').style.display = 'none';
+    }
+
+    $('breakdownArea').innerHTML = [
+      { val: fmtLabel(trackedMins),                       lbl: 'Tracked' },
+      { val: remaining > 0 ? fmtLabel(remaining) : '—',  lbl: 'Remaining' },
+      { val: fmtLabel(breakBudget),                       lbl: 'Break Budget' },
+    ].map(i => `
+      <div class="bk-item">
+        <div class="bk-val">${i.val}</div>
+        <div class="bk-lbl">${i.lbl}</div>
+      </div>
+    `).join('');
+  }
+
+  function showPlaceholder() {
+    $('placeholder').style.display = 'block';
+    $('resultContent').style.display = 'none';
+    $('resultCard').className = 'result-card';
+  }
+
+  function resetAll() {
+    $('trackedH').value = '';
+    $('trackedM').value = '';
+    $('dayType').value  = 'full';
+    $('entryTime').value = '07:00';
+    $('exitTime').value  = '16:00';
+    updateOfficeInfo();
+    showPlaceholder();
+  }
+
+  // Init
+  updateOfficeInfo();
+</script>
+</body>
+</html>
